@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberPunk 2099 Chat</title>
+    <style>
+        body {
+            background: #121212;
+            font-family: 'Courier New', Courier, monospace;
+            color: #00ff99;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ff00ff;
+            text-shadow: 0 0 5px #00ff99, 0 0 10px #00ff99, 0 0 15px #ff00ff;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login-box, .chat-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 153, 0.5);
+            width: 400px;
+            max-width: 100%;
+        }
+
+        .login-box input, .chat-box input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #00ff99;
+            border-radius: 5px;
+            background-color: #1a1a1a;
+            color: #00ff99;
+            font-size: 16px;
+        }
+
+        .login-box button, .chat-box button {
+            background-color: #ff00ff;
+            color: #fff;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+
+        .login-box button:hover, .chat-box button:hover {
+            background-color: #ff3366;
+        }
+
+        .chat-box {
+            display: none;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            background: #1a1a1a;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #00ff99;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+        }
+
+        .chat-message img {
+            max-width: 200px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+
+        .file-upload {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .file-upload input {
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-box">
+            <h1>CyberPunk 2099</h1>
+            <form id="login-form">
+                <input type="text" id="username" placeholder="Введите имя пользователя" required>
+                <input type="password" id="password" placeholder="Введите пароль" required>
+                <button type="submit">Войти</button>
+            </form>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <h1>Общий чат</h1>
+            <div class="chat-messages" id="chat-messages"></div>
+            <div class="file-upload">
+                <input type="file" id="file-upload" accept="image/*">
+                <button onclick="sendMessage()">Отправить</button>
+            </div>
+            <input type="text" id="message-input" placeholder="Введите сообщение" onkeydown="if(event.key === 'Enter') sendMessage()">
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // В реальной ситуации здесь должен быть запрос на сервер для проверки данных
+            if (username && password) {
+                document.querySelector('.login-box').style.display = 'none';
+                document.getElementById('chat-box').style.display = 'flex';
+            } else {
+                alert('Пожалуйста, заполните все поля.');
+            }
+        });
+
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+            const fileInput = document.getElementById('file-upload');
+            const file = fileInput.files[0];
+            const chatMessages = document.getElementById('chat-messages');
+
+            if (message || file) {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('chat-message');
+                messageElement.innerText = message;
+
+                if (file) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    messageElement.appendChild(img);
+                }
+
+                chatMessages.appendChild(messageElement);
+                messageInput.value = '';
+                fileInput.value = '';
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>
