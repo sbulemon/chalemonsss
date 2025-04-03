@@ -5,6 +5,272 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OSINT Lookup with Tracker</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary-green: #33ff33;
+            --secondary-green: #00cc00;
+            --hover-green: #66ff66;
+            --dark-bg: #1e252d;
+            --darker-bg: #161b22;
+            --danger-red: #ff3333;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #0d1117, #1a1f2b);
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background: rgba(22, 27, 34, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.2em;
+            text-align: center;
+            color: var(--primary-green);
+            text-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 25px;
+            justify-content: center;
+        }
+
+        .button-group h2 {
+            width: 100%;
+            color: var(--primary-green);
+            font-size: 1.3em;
+            margin: 0 0 10px 0;
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(45deg, var(--primary-green), var(--secondary-green));
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            text-align: center;
+            font-size: 0.95em;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn i {
+            font-size: 1.1em;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #4a5568, #2d3748);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, var(--danger-red), #cc0000);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: var(--danger-red);
+        }
+
+        .section {
+            margin: 25px 0;
+            padding: 25px;
+            background: var(--dark-bg);
+            border-radius: 10px;
+            border: 1px solid #2e3642;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .section.active {
+            opacity: 1;
+            height: auto;
+            overflow: visible;
+            padding: 25px;
+            margin: 25px 0;
+        }
+
+        .input-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            background: #2e3642;
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid var(--primary-green);
+            margin-bottom: 15px;
+        }
+
+        .input-group i {
+            padding: 8px;
+            color: var(--primary-green);
+            font-size: 1.2em;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 12px;
+            background: var(--darker-bg);
+            border: 1px solid #3b4250;
+            color: #fff;
+            border-radius: 5px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary-green);
+        }
+
+        .result-card {
+            padding: 20px;
+            background: var(--darker-bg);
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0, 255, 51, 0.1);
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #2e3642;
+        }
+
+        .result-card p {
+            margin: 8px 0;
+        }
+
+        .result-card strong {
+            color: var(--primary-green);
+            font-weight: 600;
+        }
+
+        .info-block {
+            padding: 15px;
+            margin-bottom: 15px;
+            background: rgba(30, 39, 50, 0.5);
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-green);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #33ff33;
+            color: #000;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        .notification i {
+            font-size: 1.2em;
+        }
+
+        footer {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--primary-green);
+            font-size: 1.8em;
+            transition: all 0.3s ease;
+            display: inline-block;
+        }
+
+        footer a:hover {
+            color: var(--hover-green);
+            transform: scale(1.2);
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: none;
+            color: var(--primary-green);
+            cursor: pointer;
+            margin-left: 5px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+            
+            .input-group {
+                flex-direction: column;
+            }
+            
+            .input-group input {
+                width: 100%;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -12,284 +278,159 @@
         
         <div class="button-group">
             <h2>Трекер</h2>
-            <button id="createTrackerBtn"><i class="fas fa-eye"></i> Создать трекер</button>
-            <button id="viewLogsBtn"><i class="fas fa-file-alt"></i> Логи трекера</button>
+            <button id="createTrackerBtn" class="btn">
+                <i class="fas fa-eye"></i> Создать трекер
+            </button>
+            <button id="viewLogsBtn" class="btn btn-secondary">
+                <i class="fas fa-file-alt"></i> Логи трекера
+            </button>
         </div>
 
-        <div id="trackerSection" class="section hidden">
+        <!-- Секция создания трекера -->
+        <div id="trackerSection" class="section">
             <div class="input-group">
-                <i class="fas fa-eye"></i>
-                <button id="generateLinkBtn">Сгенерировать ссылку</button>
+                <i class="fas fa-link"></i>
+                <button id="generateLinkBtn" class="btn">
+                    <i class="fas fa-plus-circle"></i> Сгенерировать ссылку
+                </button>
             </div>
-            <div id="trackerResult" class="result-card"></div>
+            <div id="trackerResult" class="result-card">
+                <p>Здесь будет отображаться ваша трекер-ссылка после генерации.</p>
+            </div>
         </div>
 
-        <div id="logsSection" class="section hidden">
+        <!-- Секция просмотра логов -->
+        <div id="logsSection" class="section">
             <div class="input-group">
                 <i class="fas fa-search"></i>
                 <input type="text" id="logFilter" placeholder="Поиск по логам...">
-                <button id="clearLogsBtn">Очистить логи</button>
-                <button id="exportLogsBtn">Экспорт логов (JSON)</button>
+                <button id="clearLogsBtn" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Очистить
+                </button>
+                <button id="exportLogsBtn" class="btn btn-secondary">
+                    <i class="fas fa-download"></i> Экспорт
+                </button>
             </div>
-            <div id="trackerLogOutput" class="result-card"></div>
+            <div id="trackerLogOutput" class="result-card">
+                <p>Логи будут отображены здесь. Для начала создайте трекер и соберите данные.</p>
+            </div>
         </div>
         
         <footer>
-            <a href="https://t.me/lemon_tool" target="_blank"><i class="fab fa-telegram"></i></a>
+            <a href="https://t.me/lemon_tool" target="_blank" title="Telegram">
+                <i class="fab fa-telegram"></i>
+            </a>
         </footer>
     </div>
 
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #0d1117;
-            color: #ffffff;
-            padding: 20px;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #1e252d;
-            border-radius: 10px;
-        }
-
-        h1 {
-            font-size: 2em;
-            text-align: center;
-            color: #33ff33;
-            margin-bottom: 20px;
-        }
-
-        .button-group {
-            margin-bottom: 20px;
-        }
-
-        .button-group h2 {
-            color: #33ff33;
-            font-size: 1.2em;
-            margin: 10px 0;
-        }
-
-        .button-group button {
-            padding: 10px 15px;
-            background: #33ff33;
-            border: none;
-            border-radius: 5px;
-            color: #000;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        .section {
-            margin: 20px 0;
-            padding: 15px;
-            background: #252c36;
-            border-radius: 5px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #2e3642;
-            padding: 5px;
-            border-radius: 5px;
-            border: 1px solid #33ff33;
-        }
-
-        .input-group i {
-            padding: 10px;
-            color: #33ff33;
-        }
-
-        .input-group input {
-            flex: 1;
-            padding: 10px;
-            background: transparent;
-            border: none;
-            color: #fff;
-            outline: none;
-        }
-
-        .input-group button {
-            padding: 10px 15px;
-            background: #33ff33;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            color: #000;
-        }
-
-        .result-card {
-            padding: 15px;
-            background: #1e252d;
-            border-radius: 5px;
-            margin-top: 10px;
-            font-family: monospace;
-            line-height: 1.5;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .result-card strong {
-            color: #33ff33;
-        }
-
-        footer {
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        footer a {
-            color: #33ff33;
-            font-size: 1.5em;
-        }
-    </style>
-
     <script>
-        window.onload = function() {
-            console.log('Страница полностью загружена');
+        // Хранилище логов
+        let trackerLogs = JSON.parse(localStorage.getItem('trackerLogs')) || [];
 
-            let trackerLogs = JSON.parse(localStorage.getItem('trackerLogs')) || [];
+        // Экранирование HTML
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.toString().replace(/[&<>"']/g, m => map[m]);
+        }
 
-            // Элементы DOM
-            const createTrackerBtn = document.getElementById('createTrackerBtn');
-            const viewLogsBtn = document.getElementById('viewLogsBtn');
-            const generateLinkBtn = document.getElementById('generateLinkBtn');
-            const clearLogsBtn = document.getElementById('clearLogsBtn');
-            const exportLogsBtn = document.getElementById('exportLogsBtn');
-            const logFilter = document.getElementById('logFilter');
-            const trackerSection = document.getElementById('trackerSection');
-            const logsSection = document.getElementById('logsSection');
-            const trackerResult = document.getElementById('trackerResult');
-            const trackerLogOutput = document.getElementById('trackerLogOutput');
-
-            // Проверка элементов
-            if (!createTrackerBtn || !viewLogsBtn || !generateLinkBtn || !clearLogsBtn || !exportLogsBtn || !trackerSection || !logsSection || !trackerResult || !trackerLogOutput) {
-                console.error('Ошибка: один или несколько элементов DOM не найдены');
-                alert('Ошибка загрузки страницы. Проверьте консоль.');
-                return;
+        // Переключение секций
+        function toggleSection(type) {
+            const sections = {
+                tracker: document.getElementById('trackerSection'),
+                logs: document.getElementById('logsSection')
+            };
+            
+            // Сначала скрываем все секции
+            Object.values(sections).forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Показываем выбранную секцию
+            sections[type].classList.add('active');
+            
+            // Если открываем логи, обновляем их отображение
+            if (type === 'logs') {
+                updateTrackerLogDisplay();
             }
+        }
 
-            // Функции
-            function toggleSection(sectionToShow) {
-                console.log('Тоггл секции:', sectionToShow);
-                if (sectionToShow === 'tracker') {
-                    trackerSection.classList.remove('hidden');
-                    logsSection.classList.add('hidden');
-                } else if (sectionToShow === 'logs') {
-                    logsSection.classList.remove('hidden');
-                    trackerSection.classList.add('hidden');
-                }
-            }
-
-            function generateTrackerLink() {
-                console.log('Генерация ссылки');
-                const trackerId = Math.random().toString(36).substring(2, 15);
+        // Генерация трекер-ссылки
+        function generateTrackerLink() {
+            const btn = document.getElementById('generateLinkBtn');
+            const originalText = btn.innerHTML;
+            
+            // Показать индикатор загрузки
+            btn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Генерация...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                const trackerId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
                 const currentUrl = window.location.href.split('?')[0];
                 const trackerUrl = `${currentUrl}?tracker=${trackerId}`;
-                trackerResult.innerHTML = `
-                    <p><strong>Ваша ссылка:</strong> <a href="${trackerUrl}" target="_blank">${trackerUrl}</a></p>
-                    <p>Отправьте эту ссылку для сбора данных.</p>
+                
+                const result = document.getElementById('trackerResult');
+                result.innerHTML = `
+                    <div class="info-block">
+                        <p><strong>Ваша трекер-ссылка:</strong></p>
+                        <p id="trackerUrl" style="word-break: break-all; color: var(--primary-green);">
+                            ${trackerUrl}
+                            <button class="copy-btn" title="Копировать" onclick="copyToClipboard('${trackerUrl}')">
+                                <i class="far fa-copy"></i>
+                            </button>
+                        </p>
+                        <p><strong>Инструкция:</strong></p>
+                        <p>1. Скопируйте и отправьте эту ссылку нужному человеку</p>
+                        <p>2. Когда он перейдёт по ссылке, данные будут записаны в логи</p>
+                        <p>3. Просматривайте собранные данные во вкладке "Логи трекера"</p>
+                    </div>
                 `;
-                alert('Ссылка сгенерирована: ' + trackerUrl);
-            }
+                
+                showNotification('Ссылка успешно сгенерирована!', 'check-circle');
+                
+                // Восстановить кнопку
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }, 800);
+        }
 
-            function updateTrackerLogDisplay(logs = trackerLogs) {
-                console.log('Обновление логов:', logs);
-                trackerLogOutput.innerHTML = '';
-                logs.forEach(log => {
-                    const div = document.createElement('div');
-                    div.innerHTML = `
-                        <p><strong>ID:</strong> ${log.trackerId}</p>
-                        <p><strong>Время:</strong> ${log.timestamp}</p>
-                        <p><strong>IP:</strong> ${log.ip}</p>
-                        <p><strong>Страна:</strong> ${log.country}</p>
-                        <p><strong>Город:</strong> ${log.city}</p>
-                        <p><strong>ISP:</strong> ${log.isp}</p>
-                        <p><strong>User-Agent:</strong> ${log.userAgent}</p>
-                    `;
-                    trackerLogOutput.appendChild(div);
-                });
-            }
+        // Копирование в буфер обмена
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Ссылка скопирована!', 'copy');
+            }).catch(err => {
+                console.error('Ошибка копирования: ', err);
+                showNotification('Ошибка копирования', 'times-circle');
+            });
+        }
 
-            function filterLogs() {
-                console.log('Фильтрация логов');
-                const filter = logFilter.value.toLowerCase();
-                const filteredLogs = trackerLogs.filter(log => 
-                    log.trackerId.toLowerCase().includes(filter) ||
-                    log.ip.toLowerCase().includes(filter) ||
-                    log.country.toLowerCase().includes(filter) ||
-                    log.city.toLowerCase().includes(filter) ||
-                    log.isp.toLowerCase().includes(filter) ||
-                    log.userAgent.toLowerCase().includes(filter)
-                );
-                updateTrackerLogDisplay(filteredLogs);
-            }
+        // Логирование посетителя
+        async function logVisitor() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackerId = urlParams.get('tracker');
+            if (!trackerId) return;
 
-            function clearTrackerLogs() {
-                console.log('Очистка логов');
-                trackerLogs = [];
-                localStorage.removeItem('trackerLogs');
-                updateTrackerLogDisplay();
-                alert('Логи очищены!');
-            }
-
-            function exportLogs() {
-                console.log('Экспорт логов');
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trackerLogs, null, 2));
-                const downloadAnchor = document.createElement('a');
-                downloadAnchor.setAttribute("href", dataStr);
-                downloadAnchor.setAttribute("download", "tracker_logs.json");
-                document.body.appendChild(downloadAnchor);
-                downloadAnchor.click();
-                downloadAnchor.remove();
-                alert('Логи экспортированы!');
-            }
-
-            async function logVisitor() {
-                const urlParams = new URLSearchParams(window.location.search);
-                const trackerId = urlParams.get('tracker');
-
-                if (!trackerId) {
-                    console.log('Нет trackerId, отображаем интерфейс');
-                    updateTrackerLogDisplay();
-                    return;
-                }
-
-                console.log('Логирование посетителя с ID:', trackerId);
+            try {
                 const timestamp = new Date().toLocaleString();
                 const userAgent = navigator.userAgent;
+                const screenResolution = `${window.screen.width}x${window.screen.height}`;
+                const language = navigator.language || navigator.userLanguage;
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const referrer = document.referrer || 'Прямой переход';
 
+                // Получение данных через ip-api
                 let ipData = {};
                 try {
-                    console.log('Запрос к ip-api');
-                    const response = await fetch('https://ip-api.com/json/?fields=query,country,city,isp', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    if (!response.ok) {
-                        throw new Error(`HTTP ошибка: ${response.status}`);
-                    }
+                    const response = await fetch('https://ip-api.com/json/?fields=query,country,city,regionName,lat,lon,isp,org,mobile,proxy,hosting');
                     ipData = await response.json();
-                    console.log('Успешно получены данные от ip-api:', ipData);
                 } catch (error) {
-                    console.error('Ошибка при запросе к ip-api:', error);
-                    ipData = {
-                        query: 'Неизвестно',
-                        country: 'Неизвестно',
-                        city: 'Неизвестно',
-                        isp: 'Неизвестно'
-                    };
+                    console.error('Ошибка получения данных через ip-api:', error);
+                    ipData = { error: 'Не удалось получить данные' };
                 }
 
                 const logEntry = {
@@ -297,54 +438,168 @@
                     timestamp,
                     ip: ipData.query || 'Неизвестно',
                     country: ipData.country || 'Неизвестно',
+                    region: ipData.regionName || 'Неизвестно',
                     city: ipData.city || 'Неизвестно',
+                    latitude: ipData.lat || 'Н/Д',
+                    longitude: ipData.lon || 'Н/Д',
                     isp: ipData.isp || 'Неизвестно',
-                    userAgent
+                    organization: ipData.org || 'Неизвестно',
+                    isMobile: ipData.mobile ? 'Да' : 'Нет',
+                    isProxy: ipData.proxy ? 'Да' : 'Нет',
+                    isHosting: ipData.hosting ? 'Да' : 'Нет',
+                    userAgent,
+                    screenResolution,
+                    language,
+                    timezone,
+                    referrer
                 };
 
                 trackerLogs.push(logEntry);
                 localStorage.setItem('trackerLogs', JSON.stringify(trackerLogs));
-                console.log('Запись добавлена в логи:', logEntry);
-
+                
+                // Показываем благодарность
                 document.body.innerHTML = `
-                    <div style="text-align: center; padding: 50px; color: #fff;">
-                        <h1>Спасибо за посещение!</h1>
-                        <p>Ваши данные записаны.</p>
-                        <a href="${window.location.href.split('?')[0]}" style="color: #33ff33;">Вернуться</a>
+                    <div class="container" style="text-align: center; padding: 50px;">
+                        <h1 style="color: var(--primary-green);">
+                            <i class="fas fa-check-circle"></i> Спасибо!
+                        </h1>
+                        <p>Ваш визит был записан.</p>
+                        <p style="margin-top: 30px;">
+                            <a href="#" onclick="window.history.back(); return false;" style="color: var(--primary-green); text-decoration: none;">
+                                <i class="fas fa-arrow-left"></i> Вернуться назад
+                            </a>
+                        </p>
                     </div>
                 `;
+            } catch (error) {
+                console.error('Ошибка при логировании:', error);
+            }
+        }
+
+        // Обновление отображения логов
+        function updateTrackerLogDisplay(logs = trackerLogs) {
+            const logOutput = document.getElementById('trackerLogOutput');
+            if (!logOutput) return;
+
+            if (logs.length === 0) {
+                logOutput.innerHTML = '<p>Логов не найдено. Создайте трекер и соберите данные.</p>';
+                return;
             }
 
-            // Привязка событий
-            createTrackerBtn.onclick = () => {
-                console.log('Клик: Создать трекер');
-                toggleSection('tracker');
-            };
-            viewLogsBtn.onclick = () => {
-                console.log('Клик: Логи трекера');
-                toggleSection('logs');
-            };
-            generateLinkBtn.onclick = () => {
-                console.log('Клик: Сгенерировать ссылку');
-                generateTrackerLink();
-            };
-            clearLogsBtn.onclick = () => {
-                console.log('Клик: Очистить логи');
-                clearTrackerLogs();
-            };
-            exportLogsBtn.onclick = () => {
-                console.log('Клик: Экспорт логов');
-                exportLogs();
-            };
-            logFilter.onkeyup = () => {
-                console.log('Ввод в фильтр');
-                filterLogs();
-            };
+            logOutput.innerHTML = '';
+            logs.forEach((log, index) => {
+                const div = document.createElement('div');
+                div.className = 'info-block';
+                div.innerHTML = `
+                    <p><strong>Запись #${index + 1}</strong></p>
+                    <p><strong>ID трекера:</strong> ${escapeHtml(log.trackerId)}</p>
+                    <p><strong>Время:</strong> ${escapeHtml(log.timestamp)}</p>
+                    <p><strong>IP:</strong> ${escapeHtml(log.ip)}</p>
+                    <p><strong>Страна:</strong> ${escapeHtml(log.country)}</p>
+                    <p><strong>Регион:</strong> ${escapeHtml(log.region)}</p>
+                    <p><strong>Город:</strong> ${escapeHtml(log.city)}</p>
+                    <p><strong>Координаты:</strong> ${escapeHtml(log.latitude)}, ${escapeHtml(log.longitude)}</p>
+                    <p><strong>Провайдер:</strong> ${escapeHtml(log.isp)}</p>
+                    <p><strong>Организация:</strong> ${escapeHtml(log.organization)}</p>
+                    <p><strong>Мобильный:</strong> ${escapeHtml(log.isMobile)}</p>
+                    <p><strong>Прокси/VPN:</strong> ${escapeHtml(log.isProxy)}</p>
+                    <p><strong>Хостинг:</strong> ${escapeHtml(log.isHosting)}</p>
+                    <p><strong>Источник перехода:</strong> ${escapeHtml(log.referrer)}</p>
+                    <p><strong>Устройство:</strong> ${escapeHtml(log.userAgent)}</p>
+                    <p><strong>Разрешение экрана:</strong> ${escapeHtml(log.screenResolution)}</p>
+                    <p><strong>Язык:</strong> ${escapeHtml(log.language)}</p>
+                    <p><strong>Часовой пояс:</strong> ${escapeHtml(log.timezone)}</p>
+                `;
+                logOutput.appendChild(div);
+            });
+        }
 
-            // Инициализация
-            console.log('Запуск инициализации');
-            logVisitor();
-        };
+        // Фильтрация логов
+        function filterLogs() {
+            const filter = document.getElementById('logFilter').value.toLowerCase();
+            const filteredLogs = trackerLogs.filter(log => 
+                Object.values(log).some(value => 
+                    String(value).toLowerCase().includes(filter)
+                )
+            );
+            updateTrackerLogDisplay(filteredLogs);
+        }
+
+        // Очистка логов
+        function clearTrackerLogs() {
+            if (confirm('Вы уверены, что хотите полностью очистить все логи? Это действие нельзя отменить.')) {
+                trackerLogs = [];
+                localStorage.removeItem('trackerLogs');
+                updateTrackerLogDisplay();
+                showNotification('Логи успешно очищены!', 'trash');
+            }
+        }
+
+        // Экспорт логов
+        function exportLogs() {
+            if (trackerLogs.length === 0) {
+                showNotification('Нет логов для экспорта', 'exclamation-circle');
+                return;
+            }
+
+            const btn = document.getElementById('exportLogsBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Подготовка...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                try {
+                    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trackerLogs, null, 2));
+                    const downloadAnchor = document.createElement('a');
+                    downloadAnchor.setAttribute("href", dataStr);
+                    downloadAnchor.setAttribute("download", `tracker_logs_${new Date().toISOString().slice(0,10)}.json`);
+                    document.body.appendChild(downloadAnchor);
+                    downloadAnchor.click();
+                    downloadAnchor.remove();
+                    showNotification('Логи экспортированы!', 'download');
+                } catch (error) {
+                    console.error('Ошибка при экспорте:', error);
+                    showNotification('Ошибка экспорта', 'times-circle');
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }, 500);
+        }
+
+        // Уведомления
+        function showNotification(message, icon = 'info-circle') {
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            notification.innerHTML = `<i class="fas fa-${icon}"></i> ${message}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('show'), 10);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            // Привязка событий к кнопкам
+            document.getElementById('createTrackerBtn').addEventListener('click', () => toggleSection('tracker'));
+            document.getElementById('viewLogsBtn').addEventListener('click', () => toggleSection('logs'));
+            document.getElementById('generateLinkBtn').addEventListener('click', generateTrackerLink);
+            document.getElementById('clearLogsBtn').addEventListener('click', clearTrackerLogs);
+            document.getElementById('exportLogsBtn').addEventListener('click', exportLogs);
+            document.getElementById('logFilter').addEventListener('input', filterLogs);
+
+            // Проверка трекера в URL
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('tracker')) {
+                logVisitor();
+            } else {
+                // По умолчанию показываем секцию трекера
+                toggleSection('tracker');
+            }
+        });
     </script>
 </body>
 </html>
