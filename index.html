@@ -154,9 +154,8 @@
     </style>
 
     <script>
-        // Ждем полной загрузки DOM
         window.onload = function() {
-            console.log('Страница загружена, инициализация начата');
+            console.log('Страница полностью загружена');
 
             let trackerLogs = JSON.parse(localStorage.getItem('trackerLogs')) || [];
 
@@ -172,15 +171,16 @@
             const trackerResult = document.getElementById('trackerResult');
             const trackerLogOutput = document.getElementById('trackerLogOutput');
 
-            // Проверка наличия элементов
-            if (!createTrackerBtn || !viewLogsBtn || !generateLinkBtn || !clearLogsBtn || !exportLogsBtn) {
-                console.error('Один или несколько элементов не найдены');
+            // Проверка элементов
+            if (!createTrackerBtn || !viewLogsBtn || !generateLinkBtn || !clearLogsBtn || !exportLogsBtn || !trackerSection || !logsSection || !trackerResult || !trackerLogOutput) {
+                console.error('Ошибка: один или несколько элементов DOM не найдены');
+                alert('Ошибка загрузки страницы. Проверьте консоль.');
                 return;
             }
 
             // Функции
             function toggleSection(sectionToShow) {
-                console.log('Переключение секции:', sectionToShow);
+                console.log('Тоггл секции:', sectionToShow);
                 if (sectionToShow === 'tracker') {
                     trackerSection.classList.remove('hidden');
                     logsSection.classList.add('hidden');
@@ -203,7 +203,7 @@
             }
 
             function updateTrackerLogDisplay(logs = trackerLogs) {
-                console.log('Обновление логов, количество записей:', logs.length);
+                console.log('Обновление логов:', logs);
                 trackerLogOutput.innerHTML = '';
                 logs.forEach(log => {
                     const div = document.createElement('div');
@@ -257,27 +257,39 @@
             async function logVisitor() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const trackerId = urlParams.get('tracker');
-                
+
                 if (!trackerId) {
-                    console.log('Нет trackerId, показываем интерфейс');
+                    console.log('Нет trackerId, отображаем интерфейс');
                     updateTrackerLogDisplay();
                     return;
                 }
 
-                console.log('Обнаружен trackerId:', trackerId);
+                console.log('Логирование посетителя с ID:', trackerId);
                 const timestamp = new Date().toLocaleString();
                 const userAgent = navigator.userAgent;
 
                 let ipData = {};
                 try {
                     console.log('Запрос к ip-api');
-                    const response = await fetch('https://ip-api.com/json/?fields=query,country,city,isp');
-                    if (!response.ok) throw new Error('Ошибка сети: ' + response.status);
+                    const response = await fetch('https://ip-api.com/json/?fields=query,country,city,isp', {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ошибка: ${response.status}`);
+                    }
                     ipData = await response.json();
-                    console.log('Данные от ip-api:', ipData);
+                    console.log('Успешно получены данные от ip-api:', ipData);
                 } catch (error) {
-                    console.error('Ошибка получения данных через ip-api:', error);
-                    ipData = { query: 'Неизвестно', country: 'Неизвестно', city: 'Неизвестно', isp: 'Неизвестно' };
+                    console.error('Ошибка при запросе к ip-api:', error);
+                    ipData = {
+                        query: 'Неизвестно',
+                        country: 'Неизвестно',
+                        city: 'Неизвестно',
+                        isp: 'Неизвестно'
+                    };
                 }
 
                 const logEntry = {
@@ -292,7 +304,7 @@
 
                 trackerLogs.push(logEntry);
                 localStorage.setItem('trackerLogs', JSON.stringify(trackerLogs));
-                console.log('Лог добавлен:', logEntry);
+                console.log('Запись добавлена в логи:', logEntry);
 
                 document.body.innerHTML = `
                     <div style="text-align: center; padding: 50px; color: #fff;">
@@ -304,33 +316,33 @@
             }
 
             // Привязка событий
-            createTrackerBtn.onclick = function() {
-                console.log('Клик по "Создать трекер"');
+            createTrackerBtn.onclick = () => {
+                console.log('Клик: Создать трекер');
                 toggleSection('tracker');
             };
-            viewLogsBtn.onclick = function() {
-                console.log('Клик по "Логи трекера"');
+            viewLogsBtn.onclick = () => {
+                console.log('Клик: Логи трекера');
                 toggleSection('logs');
             };
-            generateLinkBtn.onclick = function() {
-                console.log('Клик по "Сгенерировать ссылку"');
+            generateLinkBtn.onclick = () => {
+                console.log('Клик: Сгенерировать ссылку');
                 generateTrackerLink();
             };
-            clearLogsBtn.onclick = function() {
-                console.log('Клик по "Очистить логи"');
+            clearLogsBtn.onclick = () => {
+                console.log('Клик: Очистить логи');
                 clearTrackerLogs();
             };
-            exportLogsBtn.onclick = function() {
-                console.log('Клик по "Экспорт логов"');
+            exportLogsBtn.onclick = () => {
+                console.log('Клик: Экспорт логов');
                 exportLogs();
             };
-            logFilter.onkeyup = function() {
-                console.log('Ввод в поле фильтра');
+            logFilter.onkeyup = () => {
+                console.log('Ввод в фильтр');
                 filterLogs();
             };
 
             // Инициализация
-            console.log('Запуск logVisitor');
+            console.log('Запуск инициализации');
             logVisitor();
         };
     </script>
