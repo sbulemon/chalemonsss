@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OSINT Lookup with Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-search"></i> OSINT BY @sbulemon</h1>
+        
+        <div class="button-group">
+            <h2>Трекер</h2>
+            <button id="createTrackerBtn"><i class="fas fa-eye"></i> Создать трекер</button>
+            <button id="viewLogsBtn"><i class="fas fa-file-alt"></i> Логи трекера</button>
+        </div>
+
+        <div id="trackerSection" class="section hidden">
+            <div class="input-group">
+                <i class="fas fa-eye"></i>
+                <button id="generateLinkBtn">Сгенерировать ссылку</button>
+            </div>
+            <div id="trackerResult" class="result-card"></div>
+        </div>
+
+        <div id="logsSection" class="section hidden">
+            <div class="input-group">
+                <i class="fas fa-search"></i>
+                <input type="text" id="logFilter" placeholder="Поиск по логам...">
+                <button id="clearLogsBtn">Очистить логи</button>
+                <button id="exportLogsBtn">Экспорт логов (JSON)</button>
+            </div>
+            <div id="trackerLogOutput" class="result-card"></div>
+        </div>
+        
+        <footer>
+            <a href="https://t.me/lemon_tool" target="_blank"><i class="fab fa-telegram"></i></a>
+        </footer>
+    </div>
+
+    <style>
+        :root {
+            --primary-green: #33ff33;
+            --secondary-green: #00cc00;
+            --hover-green: #66ff66;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #0d1117, #1a1f2b);
+            color: #ffffff;
+            padding: 20px;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 30px;
+            background: rgba(22, 27, 34, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1);
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-align: center;
+            color: var(--primary-green);
+            text-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            margin-bottom: 30px;
+        }
+
+        .button-group {
+            margin-bottom: 20px;
+        }
+
+        .button-group h2 {
+            color: var(--primary-green);
+            font-size: 1.2em;
+            margin: 15px 0 5px;
+        }
+
+        .button-group button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: linear-gradient(45deg, var(--primary-green), var(--secondary-green));
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .button-group button:hover {
+            transform: translateY(-3px) scale(1.05);
+            background: var(--hover-green);
+            box-shadow: 0 5px 15px rgba(0, 255, 0, 0.4);
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #1e252d;
+            border-radius: 10px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .section:not(.hidden) {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #2e3642;
+            padding: 5px;
+            border-radius: 8px;
+            border: 2px solid var(--primary-green);
+        }
+
+        .input-group i {
+            padding: 10px;
+            color: var(--primary-green);
+        }
+
+        .input-group input {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #fff;
+            outline: none;
+        }
+
+        .input-group button {
+            padding: 10px 15px;
+            background: var(--primary-green);
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            color: #000;
+        }
+
+        .result-card {
+            padding: 15px;
+            background: #252c36;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0, 255, 51, 0.2);
+            font-family: 'Courier New', monospace;
+            line-height: 1.5;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-card strong {
+            color: var(--primary-green);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px;
+            background: #33ff33;
+            color: #000;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            opacity: 1;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        footer a {
+            color: var(--primary-green);
+            font-size: 1.5em;
+            transition: all 0.3s ease;
+        }
+
+        footer a:hover {
+            color: var(--hover-green);
+            transform: scale(1.2);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .button-group button {
+                display: block;
+                width: 100%;
+                margin: 5px 0;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .input-group button {
+                width: 100%;
+            }
+        }
+    </style>
+
+    <script>
+        (function() {
+            // Хранилище логов
+            let trackerLogs = JSON.parse(localStorage.getItem('trackerLogs')) || [];
+
+            // Экранирование HTML
+            function escapeHtml(text) {
+                const map = {
+                    '&': '&',
+                    '<': '<',
+                    '>': '>',
+                    '"': '"',
+                    "'": '''
+                };
+                return text.toString().replace(/[&<>"']/g, m => map[m]);
+            }
+
+            // Переключение секций
+            function toggleInput(type) {
+                const sections = ['trackerSection', 'logsSection'];
+                const currentSection = document.getElementById(type + 'Section');
+                sections.forEach(sectionId => {
+                    const section = document.getElementById(sectionId);
+                    if (sectionId !== type + 'Section' && !section.classList.contains('hidden')) {
+                        section.classList.add('hidden');
+                    }
+                });
+                currentSection.classList.toggle('hidden');
+            }
+
+            // Генерация трекер-ссылки
+            function generateTrackerLink() {
+                const trackerId = Math.random().toString(36).substring(2, 15);
+                const currentUrl = window.location.href.split('?')[0];
+                const trackerUrl = `${currentUrl}?tracker=${trackerId}`;
+                const result = document.getElementById('trackerResult');
+                result.innerHTML = `
+                    <p><strong>Ваша ссылка:</strong> <a href="${trackerUrl}" target="_blank">${trackerUrl}</a></p>
+                    <p>Отправьте эту ссылку, чтобы собрать данные.</p>
+                `;
+                showNotification('Ссылка успешно сгенерирована!');
+            }
+
+            // Логирование посетителя
+            async function logVisitor() {
+                const urlParams = new URLSearchParams(window.location.search);
+                const trackerId = urlParams.get('tracker');
+                if (!trackerId) return;
+
+                const timestamp = new Date().toLocaleString();
+                const userAgent = navigator.userAgent;
+                const screenResolution = `${window.screen.width}x${window.screen.height}`;
+                const language = navigator.language || navigator.userLanguage;
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+                let ipData = {};
+                try {
+                    const response = await fetch('https://ip-api.com/json/?fields=query,country,city,regionName,lat,lon,isp,org,mobile,proxy,hosting');
+                    ipData = await response.json();
+                } catch (error) {
+                    console.error('Ошибка получения данных через ip-api:', error);
+                }
+
+                const logEntry = {
+                    trackerId,
+                    timestamp,
+                    ip: ipData.query || 'Неизвестно',
+                    country: ipData.country || 'Неизвестно',
+                    region: ipData.regionName || 'Неизвестно',
+                    city: ipData.city || 'Неизвестно',
+                    latitude: ipData.lat || 'Н/Д',
+                    longitude: ipData.lon || 'Н/Д',
+                    isp: ipData.isp || 'Неизвестно',
+                    organization: ipData.org || 'Неизвестно',
+                    isMobile: ipData.mobile ? 'Да' : 'Нет',
+                    isProxy: ipData.proxy ? 'Да' : 'Нет',
+                    isHosting: ipData.hosting ? 'Да' : 'Нет',
+                    userAgent,
+                    screenResolution,
+                    language,
+                    timezone
+                };
+
+                trackerLogs.push(logEntry);
+                localStorage.setItem('trackerLogs', JSON.stringify(trackerLogs));
+                updateTrackerLogDisplay();
+                document.body.innerHTML = '<h1>Спасибо за посещение!</h1>';
+            }
+
+            // Обновление отображения логов
+            function updateTrackerLogDisplay(logs = trackerLogs) {
+                const logOutput = document.getElementById('trackerLogOutput');
+                if (logOutput) {
+                    logOutput.innerHTML = '';
+                    logs.forEach(log => {
+                        const div = document.createElement('div');
+                        div.className = 'info-block';
+                        div.innerHTML = `
+                            <p><strong>ID трекера:</strong> ${escapeHtml(log.trackerId)}</p>
+                            <p><strong>Время:</strong> ${escapeHtml(log.timestamp)}</p>
+                            <p><strong>IP:</strong> ${escapeHtml(log.ip)}</p>
+                            <p><strong>Страна:</strong> ${escapeHtml(log.country)}</p>
+                            <p><strong>Регион:</strong> ${escapeHtml(log.region)}</p>
+                            <p><strong>Город:</strong> ${escapeHtml(log.city)}</p>
+                            <p><strong>Координаты:</strong> ${escapeHtml(log.latitude)}, ${escapeHtml(log.longitude)}</p>
+                            <p><strong>ISP:</strong> ${escapeHtml(log.isp)}</p>
+                            <p><strong>Организация:</strong> ${escapeHtml(log.organization)}</p>
+                            <p><strong>Мобильный:</strong> ${escapeHtml(log.isMobile)}</p>
+                            <p><strong>Прокси:</strong> ${escapeHtml(log.isProxy)}</p>
+                            <p><strong>Хостинг:</strong> ${escapeHtml(log.isHosting)}</p>
+                            <p><strong>User-Agent:</strong> ${escapeHtml(log.userAgent)}</p>
+                            <p><strong>Разрешение экрана:</strong> ${escapeHtml(log.screenResolution)}</p>
+                            <p><strong>Язык:</strong> ${escapeHtml(log.language)}</p>
+                            <p><strong>Часовой пояс:</strong> ${escapeHtml(log.timezone)}</p>
+                        `;
+                        logOutput.appendChild(div);
+                    });
+                }
+            }
+
+            // Фильтрация логов
+            function filterLogs() {
+                const filter = document.getElementById('logFilter').value.toLowerCase();
+                const filteredLogs = trackerLogs.filter(log => 
+                    log.trackerId.toLowerCase().includes(filter) ||
+                    log.ip.toLowerCase().includes(filter) ||
+                    log.country.toLowerCase().includes(filter) ||
+                    log.region.toLowerCase().includes(filter) ||
+                    log.city.toLowerCase().includes(filter) ||
+                    log.isp.toLowerCase().includes(filter) ||
+                    log.organization.toLowerCase().includes(filter) ||
+                    log.userAgent.toLowerCase().includes(filter) ||
+                    log.screenResolution.toLowerCase().includes(filter) ||
+                    log.language.toLowerCase().includes(filter) ||
+                    log.timezone.toLowerCase().includes(filter)
+                );
+                updateTrackerLogDisplay(filteredLogs);
+            }
+
+            // Очистка логов
+            function clearTrackerLogs() {
+                trackerLogs = [];
+                localStorage.removeItem('trackerLogs');
+                updateTrackerLogDisplay();
+                showNotification('Логи успешно очищены!');
+            }
+
+            // Экспорт логов
+            function exportLogs() {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(trackerLogs, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", "tracker_logs.json");
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                showNotification('Логи экспортированы!');
+            }
+
+            // Уведомления
+            function showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'notification';
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => notification.classList.add('show'), 10);
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            // Инициализация и привязка событий
+            document.addEventListener('DOMContentLoaded', function() {
+                // Привязка событий к кнопкам
+                const createTrackerBtn = document.getElementById('createTrackerBtn');
+                const viewLogsBtn = document.getElementById('viewLogsBtn');
+                const generateLinkBtn = document.getElementById('generateLinkBtn');
+                const clearLogsBtn = document.getElementById('clearLogsBtn');
+                const exportLogsBtn = document.getElementById('exportLogsBtn');
+                const logFilter = document.getElementById('logFilter');
+
+                if (createTrackerBtn) createTrackerBtn.addEventListener('click', () => toggleInput('tracker'));
+                if (viewLogsBtn) viewLogsBtn.addEventListener('click', () => toggleInput('logs'));
+                if (generateLinkBtn) generateLinkBtn.addEventListener('click', generateTrackerLink);
+                if (clearLogsBtn) clearLogsBtn.addEventListener('click', clearTrackerLogs);
+                if (exportLogsBtn) exportLogsBtn.addEventListener('click', exportLogs);
+                if (logFilter) logFilter.addEventListener('keyup', filterLogs);
+
+                // Запуск логирования и обновления логов
+                logVisitor();
+                updateTrackerLogDisplay();
+            });
+        })();
+    </script>
+</body>
+</html>
