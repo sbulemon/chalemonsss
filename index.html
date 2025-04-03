@@ -40,18 +40,11 @@
     </div>
 
     <style>
-        :root {
-            --primary-green: #33ff33;
-            --secondary-green: #00cc00;
-            --hover-green: #66ff66;
-        }
-
         body {
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #0d1117, #1a1f2b);
             color: #ffffff;
             padding: 20px;
-            min-height: 100vh;
             margin: 0;
         }
 
@@ -61,13 +54,12 @@
             padding: 30px;
             background: rgba(22, 27, 34, 0.95);
             border-radius: 15px;
-            box-shadow: 0 8px 32px rgba(0, 255, 0, 0.1);
         }
 
         h1 {
             font-size: 2.5em;
             text-align: center;
-            color: var(--primary-green);
+            color: #33ff33;
             margin-bottom: 30px;
         }
 
@@ -76,24 +68,20 @@
         }
 
         .button-group h2 {
-            color: var(--primary-green);
+            color: #33ff33;
             font-size: 1.2em;
             margin: 15px 0 5px;
         }
 
         .button-group button {
             padding: 12px 20px;
-            background: linear-gradient(45deg, var(--primary-green), var(--secondary-green));
+            background: #33ff33;
             border: none;
             border-radius: 8px;
             color: #000;
             font-weight: 600;
             cursor: pointer;
             margin: 5px;
-        }
-
-        .button-group button:hover {
-            background: var(--hover-green);
         }
 
         .section {
@@ -114,12 +102,12 @@
             background: #2e3642;
             padding: 5px;
             border-radius: 8px;
-            border: 2px solid var(--primary-green);
+            border: 2px solid #33ff33;
         }
 
         .input-group i {
             padding: 10px;
-            color: var(--primary-green);
+            color: #33ff33;
         }
 
         .input-group input {
@@ -133,7 +121,7 @@
 
         .input-group button {
             padding: 10px 15px;
-            background: var(--primary-green);
+            background: #33ff33;
             border-radius: 5px;
             border: none;
             cursor: pointer;
@@ -152,7 +140,7 @@
         }
 
         .result-card strong {
-            color: var(--primary-green);
+            color: #33ff33;
         }
 
         footer {
@@ -161,13 +149,12 @@
         }
 
         footer a {
-            color: var(--primary-green);
+            color: #33ff33;
             font-size: 1.5em;
         }
     </style>
 
     <script>
-        // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
             let trackerLogs = JSON.parse(localStorage.getItem('trackerLogs')) || [];
 
@@ -202,7 +189,7 @@
                     <p><strong>Ваша ссылка:</strong> <a href="${trackerUrl}" target="_blank">${trackerUrl}</a></p>
                     <p>Отправьте эту ссылку, чтобы собрать данные.</p>
                 `;
-                alert('Ссылка сгенерирована!');
+                alert('Ссылка сгенерирована: ' + trackerUrl);
             }
 
             function updateTrackerLogDisplay(logs = trackerLogs) {
@@ -213,6 +200,8 @@
                         <p><strong>ID:</strong> ${log.trackerId}</p>
                         <p><strong>Время:</strong> ${log.timestamp}</p>
                         <p><strong>IP:</strong> ${log.ip}</p>
+                        <p><strong>Страна:</strong> ${log.country}</p>
+                        <p><strong>Город:</strong> ${log.city}</p>
                     `;
                     trackerLogOutput.appendChild(div);
                 });
@@ -222,7 +211,9 @@
                 const filter = logFilter.value.toLowerCase();
                 const filteredLogs = trackerLogs.filter(log => 
                     log.trackerId.toLowerCase().includes(filter) ||
-                    log.ip.toLowerCase().includes(filter)
+                    log.ip.toLowerCase().includes(filter) ||
+                    log.country.toLowerCase().includes(filter) ||
+                    log.city.toLowerCase().includes(filter)
                 );
                 updateTrackerLogDisplay(filteredLogs);
             }
@@ -248,7 +239,10 @@
             async function logVisitor() {
                 const urlParams = new URLSearchParams(window.location.search);
                 const trackerId = urlParams.get('tracker');
-                if (!trackerId) return;
+                if (!trackerId) {
+                    updateTrackerLogDisplay();
+                    return;
+                }
 
                 const timestamp = new Date().toLocaleString();
                 let ipData = {};
@@ -269,8 +263,7 @@
 
                 trackerLogs.push(logEntry);
                 localStorage.setItem('trackerLogs', JSON.stringify(trackerLogs));
-                updateTrackerLogDisplay();
-                document.body.innerHTML = '<h1>Спасибо за посещение!</h1>';
+                document.body.innerHTML = '<h1>Спасибо за посещение!</h1><p>Ваши данные записаны. Вернитесь на главную страницу, чтобы увидеть логи.</p>';
             }
 
             // Привязка событий
@@ -283,7 +276,6 @@
 
             // Инициализация
             logVisitor();
-            updateTrackerLogDisplay();
         });
     </script>
 </body>
